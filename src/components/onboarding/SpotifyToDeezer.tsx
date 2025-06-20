@@ -47,7 +47,7 @@ async function convertSpotifyToOctave(playlistUrl: string): Promise<ConvertedPla
 */
 
 // const API_BASE_URL = "/api/convertPlaylist";
-const API_BASE_URL = "https://logsystem.vercel.app/api/convertPlaylist";
+const API_BASE_URL = "https://ejgsapis.onrender.com/api/convertPlaylist";
 
 async function convertSpotifyToOctave(playlistUrl: string): Promise<ConvertedPlaylist> {
   const response = await fetch(`${API_BASE_URL}?url=${encodeURIComponent(playlistUrl)}`);
