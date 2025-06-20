@@ -323,7 +323,7 @@ export function Main() {
             } else {
               // Fallback to Deezer API if no results
               const fallbackResp = await fetch(
-                `https://ejgsapis.onrender.com/api/deezer/?q=${encodeURIComponent(query)}`
+                `https://ejgsapis.onrender.com/api/deezer?q=${encodeURIComponent(query)}`
               );
               const fallbackData = await fallbackResp.json();
               if (fallbackData && fallbackData.length > 0) {
@@ -337,7 +337,7 @@ export function Main() {
             try {
               // Fallback to Deezer API on error
               const fallbackResp = await fetch(
-                `https://ejgsapis.onrender.com/api/deezer/?q=${encodeURIComponent(query)}`
+                `https://ejgsapis.onrender.com/api/deezer?q=${encodeURIComponent(query)}`
               );
               const fallbackData = await fallbackResp.json();
               if (fallbackData && fallbackData.length > 0) {
