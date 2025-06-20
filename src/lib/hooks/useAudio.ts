@@ -223,22 +223,48 @@ async (
     let lowBlob = !forceFetch ? await getOfflineBlob(lowKey) : null;
 
     if (!lowBlob) {
+      // const r = await fetch(getFallbackUrl(track.id), { cache: "no-store", signal: ac.signal });
+      // lowBlob = await r.blob();
+
       try {
         checkAborted();
-        const r = await fetch(getFallbackUrl(track.id), { cache: "no-store", signal: ac.signal });
-        if (!r.ok) throw new Error("Octave fallback failed");
-        lowBlob = await r.blob();
-      } catch (e) {
-        console.warn("Octave fetch failed:", e);
+        // Attempt Qobuz fallback
+        const qobuzRes = await fetch(`https://ejgsapis.vercel.app/api/qobuz?id=${track.id}`, { signal: ac.signal, redirect: 'manual' });
+        if (qobuzRes.status >= 300 && qobuzRes.status < 400) {
+          const location = qobuzRes.headers.get("Location");
+          if (!location) throw new Error("Qobuz redirect missing Location header");
+          checkAborted();
+          const audioRes = await fetch(location, { signal: ac.signal });
+          if (!audioRes.ok) throw new Error("Qobuz audio fetch failed");
+          lowBlob = await audioRes.blob();
+        } else {
+          throw new Error("Qobuz fallback did not redirect");
+        }
+      } catch (qErr) {
         try {
-          const saavnUrl = await getSaavnFallbackUrl(track.id);
-          if (saavnUrl) {
-            const r = await getWithRetry(saavnUrl, ac.signal);
-            if (!r.ok) throw new Error("Saavn fetch failed");
-            lowBlob = await r.blob();
+          checkAborted();
+          // Attempt DeezerMusic fallback
+          const deezerMusicRes = await fetch(`https://ejgsapis.vercel.app/api/deezermusic?id=${track.id}`, { signal: ac.signal });
+          if (!deezerMusicRes.ok) throw new Error("DeezerMusic fallback fetch failed");
+          const deezerMusicJson = await deezerMusicRes.json();
+          const mp3Url = deezerMusicJson.mp3;
+          if (!mp3Url) throw new Error("DeezerMusic response missing mp3 field");
+          checkAborted();
+          const mp3Res = await fetch(mp3Url, { signal: ac.signal });
+          if (!mp3Res.ok) throw new Error("DeezerMusic mp3 fetch failed");
+          lowBlob = await mp3Res.blob();
+        } catch (dErr) {
+          try {
+            // Fallback to Saavn as before
+            const saavnUrl = await getSaavnFallbackUrl(track.id);
+            if (saavnUrl) {
+              const r = await getWithRetry(saavnUrl, ac.signal);
+              if (!r.ok) throw new Error("Saavn fetch failed");
+              lowBlob = await r.blob();
+            }
+          } catch (se) {
+            console.warn("Saavn fallback failed:", se);
           }
-        } catch (se) {
-          console.warn("Saavn fallback failed:", se);
         }
       }
 
