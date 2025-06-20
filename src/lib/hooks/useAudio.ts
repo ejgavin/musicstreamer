@@ -228,31 +228,20 @@ async (
 
       try {
         checkAborted();
-        // Attempt Qobuz fallback
-        const qobuzRes = await fetch(`https://ejgsapis.vercel.app/api/qobuz?id=${track.id}`, { signal: ac.signal, redirect: 'manual' });
-        if (qobuzRes.status >= 300 && qobuzRes.status < 400) {
-          const location = qobuzRes.headers.get("Location");
-          if (!location) throw new Error("Qobuz redirect missing Location header");
-          checkAborted();
-          const audioRes = await fetch(location, { signal: ac.signal });
-          if (!audioRes.ok) throw new Error("Qobuz audio fetch failed");
-          lowBlob = await audioRes.blob();
+        // Attempt Qobuz fallback - follow redirects automatically
+        const qobuzRes = await fetch(`https://ejgsapis.vercel.app/api/qobuz?id=${track.id}`, { signal: ac.signal });
+        if (qobuzRes.ok) {
+          lowBlob = await qobuzRes.blob();
         } else {
-          throw new Error("Qobuz fallback did not redirect");
+          throw new Error("Qobuz fallback fetch failed");
         }
       } catch (qErr) {
         try {
           checkAborted();
-          // Attempt DeezerMusic fallback
+          // Attempt DeezerMusic fallback - follow redirects automatically
           const deezerMusicRes = await fetch(`https://ejgsapis.vercel.app/api/deezermusic?id=${track.id}`, { signal: ac.signal });
           if (!deezerMusicRes.ok) throw new Error("DeezerMusic fallback fetch failed");
-          const deezerMusicJson = await deezerMusicRes.json();
-          const mp3Url = deezerMusicJson.mp3;
-          if (!mp3Url) throw new Error("DeezerMusic response missing mp3 field");
-          checkAborted();
-          const mp3Res = await fetch(mp3Url, { signal: ac.signal });
-          if (!mp3Res.ok) throw new Error("DeezerMusic mp3 fetch failed");
-          lowBlob = await mp3Res.blob();
+          lowBlob = await deezerMusicRes.blob();
         } catch (dErr) {
           try {
             // Fallback to Saavn as before
