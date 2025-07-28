@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: music-streamer
+    env: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    startCommand: pnpm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: PNPM_HOME
+        value: /opt/render/project/.pnpm
